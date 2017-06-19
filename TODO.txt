@@ -1,3 +1,15 @@
+Errori:
+1
+da 2 errori quando non inserisci un url valido es /set_url ciao --> fixed
+
+2
+se rimetti lo stesso sito ti da wrong input
+
+3
+PROBLEMO DI CONCORRENZA
+
+
+TODO
 1
 prendere offset da qualche parte e fare in modo che allo shutdown del modulo non bisogni resettarlo
 

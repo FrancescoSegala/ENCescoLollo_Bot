@@ -32,7 +32,6 @@ def send_message(fromID,text):
     r = urllib2.Request(boturl+"/sendMessage?", data)
     response = urllib2.urlopen(r)
 
-
 def send_sticker(fromID,sticker):
     values={'chat_id': fromID,'sticker':sticker}
     data=urllib.urlencode(values)
@@ -89,36 +88,42 @@ def read_and_empty_updates():
         return
     for index in update:
         i+=1
-        #print "messaggio letto (i)="+str(i)+" cont messaggio="+index["message"]["text"]
-        fromID=index["message"]["from"]["id"]
-        text=index["message"]["text"].split(" ")
-        if fromID in message_queue.keys():
-            message_queue[fromID]+=text
+        if "text" not in index["message"]:
+            print "skip"
         else:
-            message_queue[fromID]=text
+            print "messaggio letto (i)="+str(i)+" cont messaggio="+index["message"]["text"]
+            fromID=index["message"]["from"]["id"]
+            text=index["message"]["text"].split(" ")
+            if fromID in message_queue.keys():
+                message_queue[fromID]+=text
+            else:
+                message_queue[fromID]=text
+    print message_queue
     offset+=i
 
 
 def read_from_message_queue():
-    if len(message_queue.keys()) < 1 :
+    num_user=len(message_queue.keys())
+    if num_user < 1 :
         return
     for userID in message_queue.keys():
-        if len( message_queue[userID]) < 1 :
-            return
+        if len( message_queue[userID]) < 1  :
+            continue
         message=message_queue[userID][0]
-        #print "message in read_from_message_queue=" + message
+        print "message in read_from_message_queue=" + message
         if message in command_list:
-            #print "comando trovato"
+            print "comando trovato"
             request_handling_function[ message ](userID)
+            del message_queue[userID][:]
         else:
-            #print "userID: "+str(userID)+" notification_sent= "
-            #print notification_sent
+            print "userID: "+str(userID)+" notification_sent= "
+            print notification_sent
             if userID not in notification_sent.keys() or notification_sent[userID]==False:
-                #print "error input mandato"
+                print "error input mandato"
                 notification_sent[userID]=True
                 wrong_input_error_handler(userID)
-        del message_queue[userID][0]
-
+            del message_queue[userID][0]
+        
 
 def reset_notification_sent():
     for user in notification_sent.keys():
@@ -139,11 +144,12 @@ def check_thread_routine():
 
 def main():
     global offset
-    offset=63569119
+    offset=63569200
     t1=threading.Thread(target=check_thread_routine)
     t1.setDaemon(True)
     t1.start()
     while True :
+        print "ciclo"
         read_and_empty_updates()
         read_from_message_queue()
         reset_notification_sent()
