@@ -8,22 +8,35 @@ se rimetti lo stesso sito ti da wrong input ---> fixed
 3
 PROBLEMO DI CONCORRENZA ---> fixed
 
+4
+check se l'url esiste !!! pena esplosione
+
 
 TODO
+
+
+
+0
+alla notifica chiedere se cancellare il sito dalla lista
+
 1
-prendere offset da qualche parte e fare in modo che allo shutdown del modulo non bisogni resettarlo
+prendere offset da qualche parte e fare in modo che allo shutdown del modulo non bisogni resettarlo -----> done
 
 2
-mandare stickers carini per il set_url
+mandare stickers carini per il set_url --> done
 
 3
-help non da un vero help--> mandare un messaggio che si capisce
+help non da un vero help--> mandare un messaggio che si capisce --> done
 
 4
 alla notifica mandare un inline keyboard con il redirect sull'url -->done
 
 5
-impara ad usare queste benedette inline url cosi si ha una keyboard con i comandi e non bisonga leggere tutte le cacate che uno puo scrivere
+impara ad usare queste benedette inline url cosi si ha una keyboard con i comandi e non bisonga leggere tutte le cacate che uno puo scrivere --> done
 
 6
 deploy su pythonanywhere e fai qualche esame cosi lo puo testare
+
+
+7
+consenti di inserire anche www.kaposao senza http(s)
