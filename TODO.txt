@@ -3,16 +3,15 @@ Errori:
 da 2 errori quando non inserisci un url valido es /set_url ciao --> fixed
 
 2
-se rimetti lo stesso sito ti da wrong input
+se rimetti lo stesso sito ti da wrong input ---> fixed
 
 3
-PROBLEMO DI CONCORRENZA
+PROBLEMO DI CONCORRENZA ---> fixed
 
 
 TODO
 1
 prendere offset da qualche parte e fare in modo che allo shutdown del modulo non bisogni resettarlo
-
 
 2
 mandare stickers carini per il set_url
@@ -21,11 +20,10 @@ mandare stickers carini per il set_url
 help non da un vero help--> mandare un messaggio che si capisce
 
 4
-alla notifica mandare un inline keyboard con il redirect sull'url
+alla notifica mandare un inline keyboard con il redirect sull'url -->done
 
 5
 impara ad usare queste benedette inline url cosi si ha una keyboard con i comandi e non bisonga leggere tutte le cacate che uno puo scrivere
-
 
 6
 deploy su pythonanywhere e fai qualche esame cosi lo puo testare

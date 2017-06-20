@@ -14,7 +14,7 @@ message_queue={} # userID , [message,message,..]
 curr_sites_size={} # url , size
 notification_sent={} # usesr , bool
 minute=60
-check_timeout=20*minute
+check_timeout=20 #*minute
 
 
 def get_page_size(url):
@@ -25,6 +25,21 @@ def get_page_size(url):
 
 def check_equal(prev,url):
     return prev == get_page_size(url)
+
+
+def send_menu_callback(fromID,msg):
+    keyboard=json.dumps({'reply_markup':[[{ 'keyboard':[[{'text':'a'}],[{'text':'b'}]] } ]] })
+    values={ 'chat_id': fromID,'text': msg , 'reply_markup': keyboard}
+    data = urllib.urlencode(values)
+    r = urllib2.Request(boturl+"/sendMessage?", data)
+    response = urllib2.urlopen(r)
+
+def send_button_message(fromID,msg,url):
+    keyboard= json.dumps({'inline_keyboard': [[{'text': 'go to page', 'url': url}]]})
+    values = { 'chat_id': fromID,'text': msg , 'reply_markup': keyboard}
+    data = urllib.urlencode(values)
+    r = urllib2.Request(boturl+"/sendMessage?", data)
+    response = urllib2.urlopen(r)
 
 def send_message(fromID,text):
     values = { 'chat_id': fromID,'text': text }
@@ -52,24 +67,24 @@ def get_updates(offset=None):
 
 
 def url_routine(fromID):
-    if len(message_queue[fromID]) <= 1:
+    if len(message_queue[fromID].split(" ") ) <= 1:
         send_message(fromID,"wrong format /seturl <url>")
         return
-    url=message_queue[fromID][1]
+    url=message_queue[fromID].split(" ")[1]
     matchOBJ=re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', url)
     if len(matchOBJ)==0:
-        send_message(fromID,"wrong format /seturl <url>,valid url expected!")
+        send_message(fromID,"wrong format /set_url <url>,valid url expected!")
     else:
         if url in sites.keys():
             if fromID not in sites[url]:
                 sites[url]+=[fromID]
                 send_message(fromID,"site insert successfully, and now the watch begins....")
-                del message_queue[fromID][1]
                 print "url insertio e gia' sottoscritto da un altro user"
+            else:
+                send_message(fromID,"we are already watching this site for you, let us work dude!")
         else:
             sites[url]=[fromID]
             curr_sites_size[url]=get_page_size(url)
-            del message_queue[fromID][1]
             send_message(fromID,"site insert successfully, and now the watch begins....")
             print "url inserito per la prima volta"
 
@@ -93,7 +108,7 @@ def read_and_empty_updates():
         else:
             print "messaggio letto (i)="+str(i)+" cont messaggio="+index["message"]["text"]
             fromID=index["message"]["from"]["id"]
-            text=index["message"]["text"].split(" ")
+            text=index["message"]["text"]#.split(" ")
             if fromID in message_queue.keys():
                 message_queue[fromID]+=text
             else:
@@ -109,26 +124,17 @@ def read_from_message_queue():
     for userID in message_queue.keys():
         if len( message_queue[userID]) < 1  :
             continue
-        message=message_queue[userID][0]
-        print "message in read_from_message_queue=" + message
-        if message in command_list:
+        message=message_queue[userID].split(" ")
+        #print "message in read_from_message_queue=" + message
+        if message[0] in command_list:
             print "comando trovato"
-            request_handling_function[ message ](userID)
-            del message_queue[userID][:]
+            request_handling_function[ message[0] ](userID)
         else:
-            print "userID: "+str(userID)+" notification_sent= "
-            print notification_sent
-            if userID not in notification_sent.keys() or notification_sent[userID]==False:
-                print "error input mandato"
-                notification_sent[userID]=True
-                wrong_input_error_handler(userID)
-            del message_queue[userID][0]
-        
+            wrong_input_error_handler(userID)
+            send_menu_callback(userID,"bella")
+        del message_queue[userID]
 
-def reset_notification_sent():
-    for user in notification_sent.keys():
-        if len(message_queue[user]) < 1:
-            notification_sent[user]=False
+
 
 
 def check_thread_routine():
@@ -136,7 +142,7 @@ def check_thread_routine():
         for url in curr_sites_size.keys():
             if check_equal(curr_sites_size[url],url) == False:
                 for user in sites[url]:
-                    send_message(user,"hey there, something in "+url+"has changed![removed from list]")
+                    send_button_message(user,"hey there, something in "+url+" has changed![removed from list]",url)
                     del sites[url]
         time.sleep(check_timeout)
 
@@ -144,7 +150,7 @@ def check_thread_routine():
 
 def main():
     global offset
-    offset=63569200
+    offset=63569271
     t1=threading.Thread(target=check_thread_routine)
     t1.setDaemon(True)
     t1.start()
@@ -152,7 +158,6 @@ def main():
         print "ciclo"
         read_and_empty_updates()
         read_from_message_queue()
-        reset_notification_sent()
         time.sleep(1)
 
 
