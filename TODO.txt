@@ -9,11 +9,12 @@ se rimetti lo stesso sito ti da wrong input ---> fixed
 PROBLEMO DI CONCORRENZA ---> fixed
 
 4
-check se l'url esiste !!! pena esplosione
+check se l'url esiste !!! pena esplosione ---> fixed
 
 
 TODO
-
+cesco_id=55870602
+TODO
 
 
 0
@@ -39,4 +40,4 @@ deploy su pythonanywhere e fai qualche esame cosi lo puo testare
 
 
 7
-consenti di inserire anche www.kaposao senza http(s)
+consenti di inserire anche www.kaposao senza http(s)  ---> done

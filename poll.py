@@ -14,13 +14,16 @@ message_queue={} # userID , [message,message,..]
 curr_sites_size={} # url , size
 notification_sent={} # usesr , bool
 minute=60
-check_timeout=20 #*minute
-help_message='''Hi, this is a bot that look at a webpage periodically and if something changes it send you a notification.\n
-                Available commands are: /set_url <url>  this command say to this bot what site to watch.
-                                        /help    show this wonderful help message.
-                                        /cancel <url>  this command say to this bot to forget about this site'''
+check_timeout=20*minute
+help_message="Hi, this is a bot that look at a webpage periodically and if something changes it send you a notification.\nAvailable commands are:\n /set_url <url>  this command say to this bot what site to watch.\n\n/help    show this wonderful help message.\n\n/cancel <url>  this command say to this bot to forget about this site\n\n"
 
 jon_sticker="CAADAgADSAADFcgcBrWClE7tlxOPAg"
+debug=False#True
+
+def debug_print (msg):
+    if debug :
+        print msg
+
 
 def get_page_size(url):
     req = urllib2.Request(url)
@@ -32,9 +35,9 @@ def check_equal(prev,url):
     return prev == get_page_size(url)
 
 
-keyboard=[['Yes'],['No']]
+default_keyboard=[['/set_url'],['/cancel'],['/help']]
 
-def send_menu_callback(fromID,msg):
+def send_menu_callback(fromID,msg,keyboard):
     reply_markup = {'keyboard': keyboard, 'resize_keyboard': True, 'one_time_keyboard': True}
     reply_markup = json.dumps(reply_markup)
     params = urllib.urlencode({
@@ -43,7 +46,7 @@ def send_menu_callback(fromID,msg):
           'reply_markup': reply_markup,
           'disable_web_page_preview': 'true',
     })
-    resp = urllib2.urlopen(boturl + '/sendMessage', params).read()
+    urllib2.urlopen(boturl + '/sendMessage', params)
 
 def send_button_message(fromID,msg,url):
     keyboard= json.dumps({'inline_keyboard': [[{'text': 'go to page', 'url': url}]]})
@@ -65,7 +68,7 @@ def send_sticker(fromID,sticker):
     response= urllib2.urlopen(r)
 
 def wrong_input_error_handler(fromID):
-    send_message(fromID,"Error! wrong input dummie")
+    send_message(fromID,"Sorry but I cannot undesrtand this, this input is malformed. :(")
 
 def get_updates(offset=None):
     url=boturl+"/getUpdates?"
@@ -76,22 +79,43 @@ def get_updates(offset=None):
     the_page_json = json.load(response)
     return the_page_json
 
+def validate_url(url):
+    try:
+        req = urllib2.Request(url)
+        urllib2.urlopen(req)
+    except urllib2.HTTPError , e :
+        print (e.code)
+        return False
+    except urllib2.URLError , e :
+        print (e.args)
+        return False
+    except:
+        return False
+    return True
 
 def url_routine(fromID):
     if len(message_queue[fromID].split(" ") ) <= 1:
-        send_message(fromID,"wrong format /seturl <url>")
+        send_message(fromID,"wrong format /set_url <url>")
         return
     url=message_queue[fromID].split(" ")[1]
-    matchOBJ=re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', url)
-    if len(matchOBJ)==0:
+    matchOBJ=re.compile('(http[s]?://)?(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+    if not matchOBJ.match(url):
         send_message(fromID,"wrong format /set_url <url>,valid url expected!")
     else:
+        valid=validate_url(url)
+        if not valid:
+            pattern=re.compile("http[s]?://")
+            if not pattern.match(url):
+                url="http://"+url
+        if not valid and not validate_url(url):
+            send_message(fromID,"Sorry but it seems that the url you insert is not a valid one. :(")
+            return
         if url in sites.keys():
             if fromID not in sites[url]:
                 sites[url]+=[fromID]
                 send_message(fromID,"site insert successfully, and now the watch begins....")
                 send_sticker(fromID,jon_sticker)
-                print "url insertio e gia' sottoscritto da un altro user"
+                debug_print( "url insertio e gia' sottoscritto da un altro user")
             else:
                 send_message(fromID,"we are already watching this site for you, let us work dude!")
         else:
@@ -99,12 +123,11 @@ def url_routine(fromID):
             curr_sites_size[url]=get_page_size(url)
             send_message(fromID,"site insert successfully, and now the watch begins....")
             send_sticker(fromID,jon_sticker)
-            print "url inserito per la prima volta"
+            debug_print ("url inserito per la prima volta")
 
 
 def help_routine(fromID):
     send_message(fromID,help_message)
-
 
 
 def cancel_routine(fromID):
@@ -112,8 +135,8 @@ def cancel_routine(fromID):
         send_message(fromID,"wrong format /cancel <url>")
         return
     url=message_queue[fromID].split(" ")[1]
-    matchOBJ=re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', url)
-    if len(matchOBJ)==0:
+    matchOBJ=re.compile('(http[s]?://)?(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+    if not matchOBJ.match(url):
         send_message(fromID,"wrong format /cancel <url>,valid url expected!")
     else:
         if url in sites.keys():
@@ -125,7 +148,7 @@ def cancel_routine(fromID):
             else:
                 send_message(fromID,"ehi man you are not watching this site...")
         else:
-            send_message(fromID,"ehi man this site does not exist!")
+            send_message(fromID,"ehi man this site does not exist! try with or without http:// in the url maybe there are some typing errors")
 
 
 
@@ -139,17 +162,19 @@ def read_and_empty_updates():
         return
     for index in update:
         i+=1
+        if "message" not in index:
+            continue
         if "text" not in index["message"]:
-            print "skip"
+            debug_print ("skip")
         else:
-            print "messaggio letto (i)="+str(i)+" cont messaggio="+index["message"]["text"]
+            debug_print ("messaggio letto (i)="+str(i)+" cont messaggio="+index["message"]["text"])
             fromID=index["message"]["from"]["id"]
-            text=index["message"]["text"]#.split(" ")
+            text=index["message"]["text"]
             if fromID in message_queue.keys():
                 message_queue[fromID]+=text
             else:
                 message_queue[fromID]=text
-    print message_queue
+    debug_print (message_queue)
     offset+=i
 
 
@@ -161,10 +186,11 @@ def read_from_message_queue():
         if len( message_queue[userID]) < 1  :
             continue
         message=message_queue[userID].split(" ")
-        #print "message in read_from_message_queue=" + message
         if message[0] in command_list:
-            print "comando trovato"
+            debug_print ("comando trovato")
             request_handling_function[ message[0] ](userID)
+        elif message[0]=="continue":
+            pass
         else:
             wrong_input_error_handler(userID)
         del message_queue[userID]
@@ -177,8 +203,10 @@ def check_thread_routine():
         for url in curr_sites_size.keys():
             if check_equal(curr_sites_size[url],url) == False:
                 for user in sites[url]:
-                    send_button_message(user,"hey there, something in "+url+" has changed![removed from list]",url)
-                    del sites[url]
+                    send_button_message(user,"hey there, something in "+url+" has changed!",url)
+                    delete_keyboard=[["/cancel "+url],["continue"]]
+                    send_menu_callback(user,"you want to delete this site from the list?",delete_keyboard)
+                    #del sites[url]
         time.sleep(check_timeout)
 
 
@@ -196,16 +224,14 @@ def main():
     t1.setDaemon(True)
     t1.start()
     while True :
-        print "ciclo"
+        debug_print( "ciclo")
         read_and_empty_updates()
         read_from_message_queue()
-        time.sleep(1)
+        time.sleep(1.5)
 
 
 
 if __name__ == '__main__':
     main()
-
-#print("aosv vs number, expected false :"+ str(check_equal(22456,"http://www.dis.uniroma1.it/~quaglia/DIDATTICA/AOSV/")))
 
 #TODO in TODO.txt
